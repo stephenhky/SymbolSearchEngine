@@ -2,6 +2,7 @@
 import numpy as np
 import sparse
 from sklearn.naive_bayes import MultinomialNB
+import numba as nb
 
 
 def preprocess_symbol_tokens(symbol_dict):
@@ -13,6 +14,7 @@ def preprocess_symbol_tokens(symbol_dict):
 
 
 # reference: https://norvig.com/spell-correct.html
+@nb.njit
 def generate_edits1_tokens(word):
     letters = 'abcdefghijklmnopqrstuvwxyz1234567890/^'
     splits = [(word[:i], word[i:]) for i in range(len(word) + 1)]
@@ -38,10 +40,10 @@ class SymbolMultinomialNaiveBayesExtractor:
         token_weights = {}
         for token in preprocess_symbol_tokens(symbol_dict):
             token_weights[token] = 1.
-            for edits1_token in generate_edits1_tokens(token):
-                token_weights[edits1_token] = self.gamma
-            for edits2_token in generate_edits2_tokens(token):
-                token_weights[edits2_token] = self.gamma * self.gamma
+            # for edits1_token in generate_edits1_tokens(token):
+            #     token_weights[edits1_token] = self.gamma
+            # for edits2_token in generate_edits2_tokens(token):
+            #     token_weights[edits2_token] = self.gamma * self.gamma
         self.symbols_weights_info[symbol] = token_weights
 
     def _produce_feature_indices(self):
@@ -56,7 +58,7 @@ class SymbolMultinomialNaiveBayesExtractor:
         self.idx2feature = {idx: feature for feature, idx in self.feature2idx.items()}
 
     def _construct_training_data(self):
-        self.X = sparse.DOK((len(self.symbol2idx), len(self.feature2idx)))
+        self.X = sparse.DOK((len(self.symbols_weights_info), len(self.feature2idx)))
         self.Y = []
         for i, (symbol, weights_info) in enumerate(self.symbols_weights_info.items()):
             self.Y.append(symbol)
@@ -65,6 +67,8 @@ class SymbolMultinomialNaiveBayesExtractor:
         self.X = self.X.to_coo().to_scipy_sparse()
 
     def train(self):
+        self._produce_feature_indices()
+        self._construct_training_data()
         self.classifier = MultinomialNB()
         self.classifier.fit(self.X, self.Y)
 
@@ -76,9 +80,9 @@ class SymbolMultinomialNaiveBayesExtractor:
             raise ValueError('Classifier not trained yet!')
 
     def predict_proba(self, string):
-        tokens = preprocess_symbol_tokens(string)
+        tokens = string.lower().split(' ')
         nbfeatures = self.X.shape[1]
-        inputX = np.zeros([[1, nbfeatures]])
+        inputX = np.zeros((1, nbfeatures))
         for token in tokens:
             inputX[0, self.feature2idx[token]] = 1.
         proba = self.classifier.predict_proba(inputX)
