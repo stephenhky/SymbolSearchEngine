@@ -1,5 +1,6 @@
 
 import numpy as np
+import sparse
 from sklearn.naive_bayes import MultinomialNB
 
 
@@ -54,10 +55,34 @@ class SymbolMultinomialNaiveBayesExtractor:
         }
         self.idx2feature = {idx: feature for feature, idx in self.feature2idx.items()}
 
-    def _produce_symbol_indices(self):
-        self.symbol2idx = {
-            symbol: idx
-            for idx, symbol in enumerate(self.symbols_weights_info.keys())
-        }
-        self.idx2symbol = {idx: symbol for symbol, idx in self.symbol2idx.items()}
+    def _construct_training_data(self):
+        self.X = sparse.DOK((len(self.symbol2idx), len(self.feature2idx)))
+        self.Y = []
+        for i, (symbol, weights_info) in enumerate(self.symbols_weights_info.items()):
+            self.Y.append(symbol)
+            for feature, weight in weights_info.items():
+                self.X[i, self.feature2idx[feature]] = weight
+        self.X = self.X.to_coo().to_scipy_sparse()
 
+    def train(self):
+        self.classifier = MultinomialNB()
+        self.classifier.fit(self.X, self.Y)
+
+    @property
+    def symbols(self):
+        try:
+            return list(self.classifier.classes_)
+        except Exception:
+            raise ValueError('Classifier not trained yet!')
+
+    def predict_proba(self, string):
+        tokens = preprocess_symbol_tokens(string)
+        nbfeatures = self.X.shape[1]
+        inputX = np.zeros([[1, nbfeatures]])
+        for token in tokens:
+            inputX[0, self.feature2idx[token]] = 1.
+        proba = self.classifier.predict_proba(inputX)
+        return {
+            self.symbols[i]: proba[0, i]
+            for i in range(proba.shape[1])
+        }
