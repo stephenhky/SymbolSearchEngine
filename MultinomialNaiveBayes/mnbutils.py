@@ -1,7 +1,12 @@
 
+from itertools import product
+import json
+import os
+
 import numpy as np
 import sparse
 from sklearn.naive_bayes import MultinomialNB
+import joblib
 import jellyfish
 
 
@@ -38,19 +43,20 @@ class SymbolMultinomialNaiveBayesExtractor:
         self.idx2feature = {idx: feature for feature, idx in self.feature2idx.items()}
 
     def _construct_training_data(self):
-        self.X = sparse.DOK((len(self.symbols_weights_info), len(self.feature2idx)))
-        self.Y = []
+        X = sparse.DOK((len(self.symbols_weights_info), len(self.feature2idx)))
+        Y = []
         for i, (symbol, weights_info) in enumerate(self.symbols_weights_info.items()):
-            self.Y.append(symbol)
+            Y.append(symbol)
             for feature, weight in weights_info.items():
-                self.X[i, self.feature2idx[feature]] = weight
-        self.X = self.X.to_coo().to_scipy_sparse()
+                X[i, self.feature2idx[feature]] = weight
+        X = X.to_coo().to_scipy_sparse()
+        return X, Y
 
     def train(self):
         self._produce_feature_indices()
-        self._construct_training_data()
+        X, Y = self._construct_training_data()
         self.classifier = MultinomialNB()
-        self.classifier.fit(self.X, self.Y)
+        self.classifier.fit(X, Y)
 
     @property
     def symbols(self):
@@ -59,21 +65,20 @@ class SymbolMultinomialNaiveBayesExtractor:
         except Exception:
             raise ValueError('Classifier not trained yet!')
 
-    def convert_string_to_X(self, string, max_edit_distance_considered=2):
+    def convert_string_to_X(self, string, max_edit_distance_considered=1):
         tokens = string.lower().split(' ')
-        nbfeatures = self.X.shape[1]
+        nbfeatures = self.classifier.n_features_
         inputX = np.zeros((1, nbfeatures))
         for token in tokens:
             if token in self.feature2idx.keys():
                 inputX[0, self.feature2idx[token]] = 1.
         if max_edit_distance_considered > 0:
-            for token in tokens:
-                for feature in self.feature2idx.keys():
-                    if token == feature:
-                        continue
-                    edit_distance = jellyfish.damerau_levenshtein_distance(token, feature)
-                    if edit_distance <= max_edit_distance_considered:
-                        inputX[0, self.feature2idx[feature]] = pow(self.gamma, edit_distance)
+            for token, feature in product(tokens, self.feature2idx.keys()):
+                if token == feature:
+                    continue
+                edit_distance = jellyfish.damerau_levenshtein_distance(token, feature)
+                if edit_distance <= max_edit_distance_considered:
+                    inputX[0, self.feature2idx[feature]] = pow(self.gamma, edit_distance)
         return inputX
 
     def predict_proba(self, string, max_edit_distance_considered=2):
@@ -83,3 +88,24 @@ class SymbolMultinomialNaiveBayesExtractor:
             symbol: prob
             for symbol, prob in zip(self.symbols, proba[0, :])
         }
+
+    def save_model(self, directory):
+        hyperparameters = {
+            'alpha': self.alpha,
+            'gamma': self.gamma
+        }
+        json.dump(hyperparameters, open(os.path.join(directory, 'hyperparameters.json'), 'w'))
+        json.dump(self.feature2idx, open(os.path.join(directory, 'feature2idx.json'), 'w'))
+        json.dump(self.symbols, open(os.path.join(directory, 'symbols.json'), 'w'))
+        json.dump(self.symbols_weights_info, open(os.path.join(directory, 'symbols_weight_info.json'), 'w'))
+        joblib.dump(self.classifier, os.path.join(directory, 'multinomialnb.joblib'))
+
+    @classmethod
+    def load_model(cls, directory):
+        hyperparameters = json.load(open(os.path.join(directory, 'hyperparameters.json'), 'r'))
+        mclf = cls(**hyperparameters)
+        mclf.symbols_weights_info = json.load(open(os.path.join(directory, 'symbols_weight_info.json'), 'r'))
+        mclf.feature2idx = json.load(open(os.path.join(directory, 'feature2idx.json'), 'r'))
+        mclf.idx2feature = {idx: feature for feature, idx in mclf.feature2idx.items()}
+        mclf.classifier = joblib.load(os.path.join(directory, 'multinomialnb.joblib'))
+        return mclf
