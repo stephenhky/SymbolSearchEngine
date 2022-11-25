@@ -2,3 +2,4 @@ numpy
 scipy
 sparse
 scikit-learn
+jellyfish
