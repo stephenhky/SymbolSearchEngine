@@ -3,6 +3,7 @@ import numpy as np
 import sparse
 from sklearn.naive_bayes import MultinomialNB
 import jellyfish
+from tqdm import tqdm
 
 
 def preprocess_symbol_tokens(symbol_dict):
@@ -59,7 +60,7 @@ class SymbolMultinomialNaiveBayesExtractor:
         except Exception:
             raise ValueError('Classifier not trained yet!')
 
-    def predict_proba(self, string, max_edit_distance_considered=2):
+    def convert_string_to_X(self, string, max_edit_distance_considered=2):
         tokens = string.lower().split(' ')
         nbfeatures = self.X.shape[1]
         inputX = np.zeros((1, nbfeatures))
@@ -74,8 +75,12 @@ class SymbolMultinomialNaiveBayesExtractor:
                     edit_distance = jellyfish.damerau_levenshtein_distance(token, feature)
                     if edit_distance <= max_edit_distance_considered:
                         inputX[0, self.feature2idx[feature]] = pow(self.gamma, edit_distance)
+        return inputX
+
+    def predict_proba(self, string, max_edit_distance_considered=2):
+        inputX = self.convert_string_to_X(string, max_edit_distance_considered=max_edit_distance_considered)
         proba = self.classifier.predict_proba(inputX)
         return {
-            self.symbols[i]: proba[0, i]
-            for i in range(proba.shape[1])
+            symbol: prob
+            for symbol, prob in zip(self.symbols, proba[0, :])
         }
