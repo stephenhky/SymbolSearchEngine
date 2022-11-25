@@ -3,7 +3,6 @@ import numpy as np
 import sparse
 from sklearn.naive_bayes import MultinomialNB
 import jellyfish
-from tqdm import tqdm
 
 
 def preprocess_symbol_tokens(symbol_dict):
