@@ -2,7 +2,6 @@
 import numpy as np
 import sparse
 from sklearn.naive_bayes import MultinomialNB
-import numba as nb
 import jellyfish
 
 
@@ -12,22 +11,6 @@ def preprocess_symbol_tokens(symbol_dict):
 
     tokens = description.split(' ') + symbol.split(' ')
     return tokens
-
-
-# reference: https://norvig.com/spell-correct.html
-@nb.njit
-def generate_edits1_tokens(word):
-    letters = 'abcdefghijklmnopqrstuvwxyz1234567890/^'
-    splits = [(word[:i], word[i:]) for i in range(len(word) + 1)]
-    deletes = [L + R[1:] for L, R in splits if R]
-    transposes = [L + R[1] + R[0] + R[2:] for L, R in splits if len(R)>1]
-    replaces = [L + c + R[1:] for L, R in splits if R for c in letters]
-    inserts = [L + c + R for L, R in splits for c in letters]
-    return set(deletes + transposes + replaces + inserts)
-
-
-def generate_edits2_tokens(word):
-    return set(e2 for e1 in generate_edits1_tokens(word) for e2 in generate_edits1_tokens(e1))
 
 
 class SymbolMultinomialNaiveBayesExtractor:
@@ -41,10 +24,6 @@ class SymbolMultinomialNaiveBayesExtractor:
         token_weights = {}
         for token in preprocess_symbol_tokens(symbol_dict):
             token_weights[token] = 1.
-            # for edits1_token in generate_edits1_tokens(token):
-            #     token_weights[edits1_token] = self.gamma
-            # for edits2_token in generate_edits2_tokens(token):
-            #     token_weights[edits2_token] = self.gamma * self.gamma
         self.symbols_weights_info[symbol] = token_weights
 
     def _produce_feature_indices(self):
