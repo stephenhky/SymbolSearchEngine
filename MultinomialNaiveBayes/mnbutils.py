@@ -81,7 +81,7 @@ class SymbolMultinomialNaiveBayesExtractor:
                     inputX[0, self.feature2idx[feature]] = pow(self.gamma, edit_distance)
         return inputX
 
-    def predict_proba(self, string, max_edit_distance_considered=2):
+    def predict_proba(self, string, max_edit_distance_considered=1):
         inputX = self.convert_string_to_X(string, max_edit_distance_considered=max_edit_distance_considered)
         proba = self.classifier.predict_proba(inputX)
         return {
