@@ -18,7 +18,7 @@ def get_argparser():
 if __name__ == '__main__':
     args = get_argparser().parse_args()
     if not os.path.isdir(args.modeldir):
-        os.makedirs([args.modeldir])
+        os.makedirs(args.modeldir)
     symbolinfo = json.load(open(args.symbolinfopath, 'r'))
 
     extractor = SymbolMultinomialNaiveBayesExtractor(alpha=args.alpha, gamma=args.gamma)
