@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 import json
 import os
 
-from mnbutils import SymbolMultinomialNaiveBayesExtractor
+from mnbutils import SymbolMultinomialNaiveBayesExtractor, SymbolInfoFeatureEngineer
 
 
 def get_argparser():
@@ -21,7 +21,8 @@ if __name__ == '__main__':
         os.makedirs(args.modeldir)
     symbolinfo = json.load(open(args.symbolinfopath, 'r'))
 
-    extractor = SymbolMultinomialNaiveBayesExtractor(alpha=args.alpha, gamma=args.gamma)
+    feature_enginner = SymbolInfoFeatureEngineer(gamma=args.gamma)
+    extractor = SymbolMultinomialNaiveBayesExtractor(feature_enginner, alpha=args.alpha)
     for info in symbolinfo:
         extractor.ingest_one_symbol_info(info)
     extractor.train()
