@@ -3,9 +3,7 @@ from itertools import product
 import json
 import os
 
-import numpy as np
 import sparse
-from scipy.sparse import csr_matrix
 from sklearn.naive_bayes import MultinomialNB
 import joblib
 import jellyfish
@@ -59,7 +57,6 @@ class SymbolInfoFeatureEngineer:
     def convert_inputstring_to_X(self, string, max_edit_distance_considered=1):
         tokens = string.lower().split(' ')
         nbfeatures = len(self.feature2idx)
-        # inputX = np.zeros((1, nbfeatures))
         inputX = sparse.DOK((1, nbfeatures))
         for token in tokens:
             if token in self.feature2idx.keys():
@@ -71,7 +68,6 @@ class SymbolInfoFeatureEngineer:
                 edit_distance = jellyfish.damerau_levenshtein_distance(token, feature)
                 if edit_distance <= max_edit_distance_considered:
                     inputX[0, self.feature2idx[feature]] = pow(self.gamma, edit_distance)
-        # return csr_matrix(inputX)
         return inputX.to_coo().to_scipy_sparse().tocsr()
 
     def save_model(self, directory):
