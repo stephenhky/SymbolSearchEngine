@@ -5,7 +5,7 @@ import json
 from sklearn.naive_bayes import MultinomialNB
 import joblib
 
-from ..symutils.featureengine import SymbolInfoFeatureEngineer
+from ..featureengine import SymbolInfoFeatureEngineer
 from .utils import BaseSymbolExtractor
 
 

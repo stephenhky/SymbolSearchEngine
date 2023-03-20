@@ -13,7 +13,6 @@ class BaseSymbolExtractor(ABC):
     def train(self):
         raise NotImplemented()
 
-    @abstractmethod
     @property
     def symbols(self):
         raise NotImplemented()
@@ -29,7 +28,6 @@ class BaseSymbolExtractor(ABC):
     def save_model(self, directory):
         raise NotImplemented()
 
-    @abstractmethod
     @classmethod
     def load_model(cls, directory, feature_engineer=None):
         raise NotImplemented()

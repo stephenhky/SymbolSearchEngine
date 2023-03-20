@@ -2,10 +2,9 @@
 from argparse import ArgumentParser
 import json
 import os
-from functools import partial
 
 from symutils.featureengine import SymbolInfoFeatureEngineer
-from ml.naivebayes import SymbolMultinomialNaiveBayesExtractor
+from symutils.ml.naivebayes import SymbolMultinomialNaiveBayesExtractor
 
 
 algo_dict = {
