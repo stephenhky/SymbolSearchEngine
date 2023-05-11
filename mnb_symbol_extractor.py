@@ -1,7 +1,6 @@
-
 from argparse import ArgumentParser
 
-from mnbutils import SymbolMultinomialNaiveBayesExtractor
+from symutils.ml.naivebayes import SymbolMultinomialNaiveBayesExtractor
 
 
 def get_argparser():
