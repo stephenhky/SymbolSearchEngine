@@ -10,7 +10,7 @@ def package_description():
 
 
 setup(name='symutils',
-      version='0.0.1a1',
+      version='0.0.1',
       description="Stock Symbol Search",
       long_description=package_description(),
       long_description_content_type='text/markdown',
