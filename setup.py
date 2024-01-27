@@ -9,7 +9,7 @@ def package_description():
     return open('README.md', 'r').read()
 
 
-setup(name='shorttext',
+setup(name='symutils',
       version='0.0.1a1',
       description="Stock Symbol Search",
       long_description=package_description(),
@@ -40,6 +40,6 @@ setup(name='shorttext',
       python_requires='>=3.8',
       install_requires=install_requirements(),
       scripts=['script/train_symbolextractor',
-               'script/mnb_symbolextractor'],
+               'script/mnb_symbol_nextractor'],
       test_suite="test",
       zip_safe=False)
