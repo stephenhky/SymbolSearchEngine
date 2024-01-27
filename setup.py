@@ -10,8 +10,8 @@ def package_description():
 
 
 setup(name='shorttext',
-      version='1.6.1',
-      description="Short Text Mining",
+      version='0.0.1a1',
+      description="Stock Symbol Search",
       long_description=package_description(),
       long_description_content_type='text/markdown',
       classifiers=[
